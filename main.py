@@ -335,37 +335,13 @@ print('第一对匹配点的右点', corresponding_points_right[:,0])
 print('一共找到', corresponding_points_left.shape[1], '对匹配点')
 
 # 存储3D点云坐标
-# 有一个opencv方法叫
-points_3d = []
+corresponding_points_left = np.array(corresponding_points_left[:2],dtype=np.float32)
+corresponding_points_right = np.array(corresponding_points_right[:2],dtype=np.float32)
 
-sl = 1 # 比例因子
-sr = 1
+points_4d_homogeneous = cv2.triangulatePoints(P1,P2,corresponding_points_left,corresponding_points_right)
+points_3d = points_4d_homogeneous[:3,:] / points_4d_homogeneous[3,:]
 
-print('P1',P1,'P2',P2)
-for i in range(corresponding_points_left.shape[1]):
-    A = np.array([
-        [P1[0, 0], 0, -sl * corresponding_points_left[0, i]],
-        [0, P1[1, 1], -sl * corresponding_points_left[1, i]],
-        [
-            P2[0, 0] * R[0, 0] - sr * corresponding_points_right[0, i] * R[2, 0],
-            P2[0, 0] * R[0, 1] - sr * corresponding_points_right[0, i] * R[2, 1],
-            P2[0, 0] * R[0, 2] - sr * corresponding_points_right[0, i] * R[2, 2]
-        ]
-    ])
-
-    # 使用numpy.linalg.solve代替求逆和矩阵乘法
-    C = np.array([
-        [P1[0, 2]],
-        [P1[1, 2]],
-        [P2[0, 0] * T[0, 0] + P2[0, 2] - T[2, 0] * sr * corresponding_points_right[0, i]]
-    ])
-
-    try:
-        pos = np.linalg.solve(A, C)  # 直接求解线性方程
-        points_3d.append(pos.flatten())  # 追加一维数组
-    except np.linalg.LinAlgError:
-        # 如果矩阵 A 不可逆，则跳过该点
-        continue
+points_3d = points_3d.T
 
 # 将 points_3d 转换为 numpy 数组
 points_3d = np.array(points_3d)
